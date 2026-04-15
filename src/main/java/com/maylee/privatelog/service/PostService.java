@@ -1,5 +1,9 @@
 package com.maylee.privatelog.service;
 
+import com.maylee.privatelog.dto.archive.DiaryDayEntry;
+import com.maylee.privatelog.dto.archive.DiaryDayGroup;
+import com.maylee.privatelog.dto.archive.DiaryMonthGroup;
+import com.maylee.privatelog.dto.archive.DiaryYearGroup;
 import com.maylee.privatelog.dto.post.PostCreateRequest;
 import com.maylee.privatelog.dto.post.PostDetailResponse;
 import com.maylee.privatelog.dto.post.PostSummaryResponse;
@@ -15,13 +19,16 @@ import com.maylee.privatelog.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +61,6 @@ public class PostService {
                 .category(category)
                 .title(request.title())
                 .content(request.content())
-                .summary(request.summary())
                 .isPublic(request.isPublic())
                 .tags(tags)
                 .build();
@@ -82,8 +88,7 @@ public class PostService {
             tags = request.tagIds().isEmpty() ? List.of() : tagsRepository.findAllById(request.tagIds());
         }
 
-        post.update(request.title(), request.content(), request.summary(),
-                request.isPublic(), category, tags);
+        post.update(request.title(), request.content(), request.isPublic(), category, tags);
 
         return PostDetailResponse.from(post, commentService.getComments(post.getId()));
     }
@@ -115,6 +120,39 @@ public class PostService {
         Posts post = postsRepository.findFirstByDate(date)
                 .orElseThrow(() -> new NoSuchElementException("해당 날짜의 게시글을 찾을 수 없습니다."));
         return PostDetailResponse.from(post, commentService.getComments(post.getId()));
+    }
+
+    public List<DiaryYearGroup> getArchive() {
+        Map<Integer, Map<Integer, Map<LocalDate, List<Posts>>>> grouped =
+                postsRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream().collect(Collectors.groupingBy(
+                        p -> p.getCreatedAt().getYear(),
+                        Collectors.groupingBy(
+                                p -> p.getCreatedAt().getMonthValue(),
+                                Collectors.groupingBy(p -> p.getCreatedAt().toLocalDate())
+                        )
+                ));
+
+        return grouped.entrySet().stream()
+                .sorted(Map.Entry.<Integer, Map<Integer, Map<LocalDate, List<Posts>>>>comparingByKey().reversed())
+                .map(yearEntry -> new DiaryYearGroup(
+                        yearEntry.getKey(),
+                        yearEntry.getValue().entrySet().stream()
+                                .sorted(Map.Entry.<Integer, Map<LocalDate, List<Posts>>>comparingByKey().reversed())
+                                .map(monthEntry -> new DiaryMonthGroup(
+                                        monthEntry.getKey(),
+                                        monthEntry.getValue().entrySet().stream()
+                                                .sorted(Map.Entry.<LocalDate, List<Posts>>comparingByKey().reversed())
+                                                .map(dayEntry -> new DiaryDayGroup(
+                                                        dayEntry.getKey(),
+                                                        dayEntry.getValue().stream()
+                                                                .map(DiaryDayEntry::from)
+                                                                .toList()
+                                                ))
+                                                .toList()
+                                ))
+                                .toList()
+                ))
+                .toList();
     }
 
     public List<PostSummaryResponse> getPostsByMonth(YearMonth yearMonth) {

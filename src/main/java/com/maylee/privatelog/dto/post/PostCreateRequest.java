@@ -8,7 +8,6 @@ import java.util.List;
 public record PostCreateRequest(
         @NotBlank @Size(max = 200) String title,
         @NotBlank String content,
-        @Size(max = 500) String summary,
         boolean isPublic,
         Long categoryId,
         List<Long> tagIds

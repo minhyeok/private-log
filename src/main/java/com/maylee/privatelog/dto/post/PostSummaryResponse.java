@@ -9,7 +9,6 @@ import java.util.List;
 public record PostSummaryResponse(
         Long id,
         String title,
-        String summary,
         boolean isPublic,
         int viewCount,
         String categoryName,
@@ -21,7 +20,6 @@ public record PostSummaryResponse(
         return new PostSummaryResponse(
                 post.getId(),
                 post.getTitle(),
-                post.getSummary(),
                 post.isPublic(),
                 post.getViewCount(),
                 post.getCategory() != null ? post.getCategory().getName() : null,

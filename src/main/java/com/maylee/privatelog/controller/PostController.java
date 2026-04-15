@@ -1,5 +1,6 @@
 package com.maylee.privatelog.controller;
 
+import com.maylee.privatelog.dto.archive.DiaryYearGroup;
 import com.maylee.privatelog.dto.post.PostCreateRequest;
 import com.maylee.privatelog.dto.post.PostDetailResponse;
 import com.maylee.privatelog.dto.post.PostSummaryResponse;
@@ -63,6 +64,12 @@ public class PostController {
             @PathVariable @DateTimeFormat(pattern = "yyyy-MM") YearMonth yearMonth
     ) {
         return ResponseEntity.ok(postService.getPostsByMonth(yearMonth));
+    }
+
+    // 연/월/일 계층 아카이브 조회
+    @GetMapping("/archive")
+    public ResponseEntity<List<DiaryYearGroup>> getArchive() {
+        return ResponseEntity.ok(postService.getArchive());
     }
 
     // 게시글 수정

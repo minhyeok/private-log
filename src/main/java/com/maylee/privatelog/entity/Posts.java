@@ -38,9 +38,6 @@ public class Posts extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(length = 500)
-    private String summary;
-
     @Builder.Default
     @Column(nullable = false)
     private boolean isPublic = true;
@@ -61,11 +58,10 @@ public class Posts extends BaseTimeEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    public void update(String title, String content, String summary, Boolean isPublic,
+    public void update(String title, String content, Boolean isPublic,
                        Categories category, List<Tags> tags) {
         if (title != null)    this.title    = title;
         if (content != null)  this.content  = content;
-        if (summary != null)  this.summary  = summary;
         if (isPublic != null) this.isPublic = isPublic;
         if (category != null) this.category = category;
         if (tags != null)     this.tags     = tags;
