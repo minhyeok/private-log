@@ -3,9 +3,10 @@ spring:
         name: privatelog
 
     datasource:
-        url: jdbc:postgresql://localhost:5432/privatelog
+        #url: jdbc:postgresql://localhost:5432/privatelog
+        url: jdbc:postgresql://hopper.proxy.rlwy.net:43536/railway
         username: postgres
-        password: keystone11
+        password: XaNvgxLBdRwFLtgZXHvpNWlMEzbmdxNT
         driver-class-name: org.postgresql.Driver
 
     jpa:
@@ -16,3 +17,7 @@ spring:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
                 format_sql: true
         show-sql: true
+
+jwt:
+    secret: privatelog-jwt-secret-key-for-hs256-algorithm-minimum-256bits
+    expiration: 86400000

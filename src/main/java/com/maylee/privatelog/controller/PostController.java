@@ -5,6 +5,7 @@ import com.maylee.privatelog.dto.post.PostCreateRequest;
 import com.maylee.privatelog.dto.post.PostDetailResponse;
 import com.maylee.privatelog.dto.post.PostSummaryResponse;
 import com.maylee.privatelog.dto.post.PostUpdateRequest;
+import com.maylee.privatelog.security.AuthUser;
 import com.maylee.privatelog.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,22 +29,19 @@ public class PostController {
 
     private final PostService postService;
 
-    // 게시글 등록
     @PostMapping
     public ResponseEntity<PostDetailResponse> createPost(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PostCreateRequest request
     ) {
-        return ResponseEntity.ok(postService.createPost(userId, request));
+        return ResponseEntity.ok(postService.createPost(authUser.id(), request));
     }
 
-    // 게시글 단건 조회 (id)
     @GetMapping("/{id}")
     public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long id) {
         return ResponseEntity.ok(postService.getPost(id));
     }
 
-    // 게시글 단건 조회 (날짜)
     @GetMapping("/date/{date}")
     public ResponseEntity<PostDetailResponse> getPostByDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
@@ -50,15 +49,17 @@ public class PostController {
         return ResponseEntity.ok(postService.getPostByDate(date));
     }
 
-    // 게시글 페이징 목록 조회
     @GetMapping
     public ResponseEntity<Page<PostSummaryResponse>> getPosts(
+            @RequestParam(required = false) Long categoryId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
+        if (categoryId != null) {
+            return ResponseEntity.ok(postService.getPostsByCategory(categoryId, pageable));
+        }
         return ResponseEntity.ok(postService.getPosts(pageable));
     }
 
-    // 특정 월의 게시글 목록 조회
     @GetMapping("/month/{yearMonth}")
     public ResponseEntity<List<PostSummaryResponse>> getPostsByMonth(
             @PathVariable @DateTimeFormat(pattern = "yyyy-MM") YearMonth yearMonth
@@ -66,19 +67,25 @@ public class PostController {
         return ResponseEntity.ok(postService.getPostsByMonth(yearMonth));
     }
 
-    // 연/월/일 계층 아카이브 조회
     @GetMapping("/archive")
-    public ResponseEntity<List<DiaryYearGroup>> getArchive() {
-        return ResponseEntity.ok(postService.getArchive());
+    public ResponseEntity<List<DiaryYearGroup>> getArchive(
+            @RequestParam(required = false) Long categoryId
+    ) {
+        return ResponseEntity.ok(postService.getArchive(categoryId));
     }
 
-    // 게시글 수정
     @PatchMapping("/{id}")
     public ResponseEntity<PostDetailResponse> updatePost(
             @PathVariable Long id,
-            @RequestParam Long userId,
+            @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PostUpdateRequest request
     ) {
-        return ResponseEntity.ok(postService.updatePost(id, userId, request));
+        return ResponseEntity.ok(postService.updatePost(id, authUser.id(), request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+        postService.deletePost(id);
+        return ResponseEntity.noContent().build();
     }
 }

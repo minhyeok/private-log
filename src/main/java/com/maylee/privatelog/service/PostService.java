@@ -106,7 +106,7 @@ public class PostService {
     }
 
     public PostDetailResponse getPost(Long id) {
-        Posts post = postsRepository.findById(id)
+        Posts post = postsRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new NoSuchElementException("게시글을 찾을 수 없습니다."));
         return PostDetailResponse.from(post, commentService.getComments(post.getId()));
     }
@@ -116,15 +116,23 @@ public class PostService {
                 .map(PostSummaryResponse::from);
     }
 
+    public Page<PostSummaryResponse> getPostsByCategory(Long categoryId, Pageable pageable) {
+        return postsRepository.findByCategoryId(categoryId, pageable)
+                .map(PostSummaryResponse::from);
+    }
+
     public PostDetailResponse getPostByDate(LocalDate date) {
         Posts post = postsRepository.findFirstByDate(date)
                 .orElseThrow(() -> new NoSuchElementException("해당 날짜의 게시글을 찾을 수 없습니다."));
         return PostDetailResponse.from(post, commentService.getComments(post.getId()));
     }
 
-    public List<DiaryYearGroup> getArchive() {
-        Map<Integer, Map<Integer, Map<LocalDate, List<Posts>>>> grouped =
-                postsRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream().collect(Collectors.groupingBy(
+    public List<DiaryYearGroup> getArchive(Long categoryId) {
+        List<Posts> posts = categoryId != null
+                ? postsRepository.findByCategoryId(categoryId, Pageable.unpaged()).getContent()
+                : postsRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Map<Integer, Map<Integer, Map<LocalDate, List<Posts>>>> grouped = posts.stream().collect(Collectors.groupingBy(
                         p -> p.getCreatedAt().getYear(),
                         Collectors.groupingBy(
                                 p -> p.getCreatedAt().getMonthValue(),

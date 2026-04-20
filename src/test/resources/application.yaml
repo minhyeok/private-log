@@ -17,3 +17,7 @@ spring:
     h2:
         console:
             enabled: false
+
+jwt:
+    secret: privatelog-jwt-secret-key-for-hs256-algorithm-minimum-256bits
+    expiration: 86400000

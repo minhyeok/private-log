@@ -3,6 +3,7 @@ package com.maylee.privatelog.repository;
 import com.maylee.privatelog.entity.Posts;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +18,9 @@ import java.util.Optional;
 @Repository
 public interface PostsRepository extends JpaRepository<Posts, Long> {
 
+    // 카테고리별 페이징 목록
+    Page<Posts> findByCategoryId(Long categoryId, Pageable pageable);
+
     // 날짜 범위 내 Posts 페이징 목록
     Page<Posts> findByCreatedAtBetween(LocalDateTime from, LocalDateTime to, Pageable pageable);
 
@@ -29,6 +33,10 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
         nativeQuery = true
     )
     List<PostDateProjection> findAllPostDates();
+
+    // user, category, tags를 한 번에 JOIN 조회 (단건 상세 조회용)
+    @EntityGraph(attributePaths = {"user", "category", "tags"})
+    Optional<Posts> findWithDetailsById(Long id);
 
     // soft delete된 것 포함 단건 조회
     @Query(value = "SELECT * FROM posts WHERE id = :id", nativeQuery = true)
