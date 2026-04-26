@@ -9,14 +9,16 @@
 </head>
 <body>
   <aside class="sidebar">
+    <div class="sidebar-author" id="author-name">—</div>
     <nav class="sidebar-nav">
-      <a href="#" class="nav-item active" id="nav-diary">일기</a>
-      <a href="#" class="nav-item" id="nav-posts">글</a>
+      <a href="#" class="nav-item" id="nav-home">홈</a>
+      <div class="nav-group">
+        <a href="#" class="nav-item" id="nav-diary">일기 글</a>
+        <div class="year-list" id="year-list"></div>
+      </div>
+      <div class="nav-divider"></div>
+      <div class="category-list" id="category-list"></div>
     </nav>
-    <div class="sidebar-user">
-      <div class="user-avatar"></div>
-      <span class="user-name" id="author-name">—</span>
-    </div>
   </aside>
 
   <main class="main" id="main-content">

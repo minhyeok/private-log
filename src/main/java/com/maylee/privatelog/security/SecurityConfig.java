@@ -28,8 +28,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 인증 엔드포인트
                         .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
-                        // 게시글 조회는 공개
-                        .requestMatchers(HttpMethod.GET, "/posts/**").permitAll()
+                        // 게시글·카테고리 조회는 공개
+                        .requestMatchers(HttpMethod.GET, "/posts/**", "/categories").permitAll()
                         // 댓글은 서비스 레이어에서 권한 처리 (익명 허용)
                         .requestMatchers("/posts/*/comments/**", "/comments/**").permitAll()
                         // 정적 리소스
