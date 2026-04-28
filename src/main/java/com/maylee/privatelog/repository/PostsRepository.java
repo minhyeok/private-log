@@ -57,6 +57,10 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     )
     Optional<Posts> findFirstByDate(@Param("date") LocalDate date);
 
+    // 카테고리 + 날짜 범위 내 전체 목록 (export용, 생성일 오름차순)
+    List<Posts> findByCategoryIdAndCreatedAtBetweenOrderByCreatedAtAsc(
+            Long categoryId, LocalDateTime from, LocalDateTime to);
+
     // 진짜 삭제
     @Modifying
     @Query(value = "DELETE FROM posts WHERE id = :id", nativeQuery = true)
