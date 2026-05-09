@@ -38,40 +38,48 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PostDetailResponse> getPost(@PathVariable Long id) {
-        return ResponseEntity.ok(postService.getPost(id));
+    public ResponseEntity<PostDetailResponse> getPost(
+            @PathVariable Long id,
+            @AuthenticationPrincipal AuthUser authUser
+    ) {
+        return ResponseEntity.ok(postService.getPost(id, authUser != null));
     }
 
     @GetMapping("/date/{date}")
     public ResponseEntity<PostDetailResponse> getPostByDate(
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @AuthenticationPrincipal AuthUser authUser
     ) {
-        return ResponseEntity.ok(postService.getPostByDate(date));
+        return ResponseEntity.ok(postService.getPostByDate(date, authUser != null));
     }
 
     @GetMapping
     public ResponseEntity<Page<PostSummaryResponse>> getPosts(
             @RequestParam(required = false) Long categoryId,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal AuthUser authUser
     ) {
+        boolean authenticated = authUser != null;
         if (categoryId != null) {
-            return ResponseEntity.ok(postService.getPostsByCategory(categoryId, pageable));
+            return ResponseEntity.ok(postService.getPostsByCategory(categoryId, pageable, authenticated));
         }
-        return ResponseEntity.ok(postService.getPosts(pageable));
+        return ResponseEntity.ok(postService.getPosts(pageable, authenticated));
     }
 
     @GetMapping("/month/{yearMonth}")
     public ResponseEntity<List<PostSummaryResponse>> getPostsByMonth(
-            @PathVariable @DateTimeFormat(pattern = "yyyy-MM") YearMonth yearMonth
+            @PathVariable @DateTimeFormat(pattern = "yyyy-MM") YearMonth yearMonth,
+            @AuthenticationPrincipal AuthUser authUser
     ) {
-        return ResponseEntity.ok(postService.getPostsByMonth(yearMonth));
+        return ResponseEntity.ok(postService.getPostsByMonth(yearMonth, authUser != null));
     }
 
     @GetMapping("/archive")
     public ResponseEntity<List<DiaryYearGroup>> getArchive(
-            @RequestParam(required = false) Long categoryId
+            @RequestParam(required = false) Long categoryId,
+            @AuthenticationPrincipal AuthUser authUser
     ) {
-        return ResponseEntity.ok(postService.getArchive(categoryId));
+        return ResponseEntity.ok(postService.getArchive(categoryId, authUser != null));
     }
 
     @PatchMapping("/{id}")

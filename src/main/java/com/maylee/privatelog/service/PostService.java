@@ -105,32 +105,46 @@ public class PostService {
         postsRepository.hardDelete(id);
     }
 
-    public PostDetailResponse getPost(Long id) {
+    public PostDetailResponse getPost(Long id, boolean authenticated) {
         Posts post = postsRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new NoSuchElementException("게시글을 찾을 수 없습니다."));
+        if (!authenticated && !post.isPublic()) {
+            throw new NoSuchElementException("게시글을 찾을 수 없습니다.");
+        }
         return PostDetailResponse.from(post, commentService.getComments(post.getId()));
     }
 
-    public Page<PostSummaryResponse> getPosts(Pageable pageable) {
-        return postsRepository.findAll(pageable)
-                .map(PostSummaryResponse::from);
+    public Page<PostSummaryResponse> getPosts(Pageable pageable, boolean authenticated) {
+        if (authenticated) {
+            return postsRepository.findAll(pageable).map(PostSummaryResponse::from);
+        }
+        return postsRepository.findByIsPublicTrue(pageable).map(PostSummaryResponse::from);
     }
 
-    public Page<PostSummaryResponse> getPostsByCategory(Long categoryId, Pageable pageable) {
-        return postsRepository.findByCategoryId(categoryId, pageable)
-                .map(PostSummaryResponse::from);
+    public Page<PostSummaryResponse> getPostsByCategory(Long categoryId, Pageable pageable, boolean authenticated) {
+        if (authenticated) {
+            return postsRepository.findByCategoryId(categoryId, pageable).map(PostSummaryResponse::from);
+        }
+        return postsRepository.findByCategoryIdAndIsPublicTrue(categoryId, pageable).map(PostSummaryResponse::from);
     }
 
-    public PostDetailResponse getPostByDate(LocalDate date) {
+    public PostDetailResponse getPostByDate(LocalDate date, boolean authenticated) {
         Posts post = postsRepository.findFirstByDate(date)
                 .orElseThrow(() -> new NoSuchElementException("해당 날짜의 게시글을 찾을 수 없습니다."));
+        if (!authenticated && !post.isPublic()) {
+            throw new NoSuchElementException("해당 날짜의 게시글을 찾을 수 없습니다.");
+        }
         return PostDetailResponse.from(post, commentService.getComments(post.getId()));
     }
 
-    public List<DiaryYearGroup> getArchive(Long categoryId) {
-        List<Posts> posts = categoryId != null
+    public List<DiaryYearGroup> getArchive(Long categoryId, boolean authenticated) {
+        List<Posts> allPosts = categoryId != null
                 ? postsRepository.findByCategoryId(categoryId, Pageable.unpaged()).getContent()
                 : postsRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        List<Posts> posts = authenticated
+                ? allPosts
+                : allPosts.stream().filter(Posts::isPublic).toList();
 
         Map<Integer, Map<Integer, Map<LocalDate, List<Posts>>>> grouped = posts.stream().collect(Collectors.groupingBy(
                         p -> p.getCreatedAt().getYear(),
@@ -163,12 +177,14 @@ public class PostService {
                 .toList();
     }
 
-    public List<PostSummaryResponse> getPostsByMonth(YearMonth yearMonth) {
+    public List<PostSummaryResponse> getPostsByMonth(YearMonth yearMonth, boolean authenticated) {
         return postsRepository.findByCreatedAtBetween(
                         yearMonth.atDay(1).atStartOfDay(),
                         yearMonth.atEndOfMonth().atTime(23, 59, 59),
                         Pageable.unpaged()
                 )
+                .stream()
+                .filter(p -> authenticated || p.isPublic())
                 .map(PostSummaryResponse::from)
                 .toList();
     }

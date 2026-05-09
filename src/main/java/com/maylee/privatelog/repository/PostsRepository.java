@@ -21,6 +21,12 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     // 카테고리별 페이징 목록
     Page<Posts> findByCategoryId(Long categoryId, Pageable pageable);
 
+    // 공개 글만 전체 페이징
+    Page<Posts> findByIsPublicTrue(Pageable pageable);
+
+    // 공개 글만 카테고리별 페이징
+    Page<Posts> findByCategoryIdAndIsPublicTrue(Long categoryId, Pageable pageable);
+
     // 날짜 범위 내 Posts 페이징 목록
     Page<Posts> findByCreatedAtBetween(LocalDateTime from, LocalDateTime to, Pageable pageable);
 
