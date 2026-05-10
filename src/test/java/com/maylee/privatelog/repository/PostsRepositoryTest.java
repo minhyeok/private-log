@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +55,7 @@ class PostsRepositoryTest {
                 .title("1월 1일")
                 .content("새해 일기")
                 .isPublic(true)
+                .postDate(LocalDate.of(2026, 1, 1))
                 .build();
         em.persist(post);
         em.flush();
@@ -71,9 +73,21 @@ class PostsRepositoryTest {
     @DisplayName("카테고리 id로 게시글 필터링")
     void findByCategoryId_returnsFilteredPosts() {
         Posts diary = Posts.builder()
-                .user(user).category(diaryCategory).title("일기 글").content("내용").isPublic(true).build();
+                .user(user)
+                .category(diaryCategory)
+                .title("일기 글")
+                .content("내용")
+                .isPublic(true)
+                .postDate(LocalDate.now())
+                .build();
         Posts etc = Posts.builder()
-                .user(user).category(etcCategory).title("기타 글").content("내용").isPublic(true).build();
+                .user(user)
+                .category(etcCategory)
+                .title("기타 글")
+                .content("내용")
+                .isPublic(true)
+                .postDate(LocalDate.now())
+                .build();
         em.persist(diary);
         em.persist(etc);
         em.flush();
@@ -89,7 +103,12 @@ class PostsRepositoryTest {
     @DisplayName("hard delete 후 조회되지 않음")
     void hardDelete_permanentlyDeletesPost() {
         Posts post = Posts.builder()
-                .user(user).title("삭제될 글").content("내용").isPublic(true).build();
+                .user(user)
+                .title("삭제될 글")
+                .content("내용")
+                .isPublic(true)
+                .postDate(LocalDate.now())
+                .build();
         em.persist(post);
         em.flush();
         Long id = post.getId();
@@ -106,7 +125,12 @@ class PostsRepositoryTest {
     @DisplayName("soft delete된 게시글은 일반 조회에 나타나지 않음")
     void softDelete_notFoundInNormalQuery() {
         Posts post = Posts.builder()
-                .user(user).title("숨겨진 글").content("내용").isPublic(true).build();
+                .user(user)
+                .title("숨겨진 글")
+                .content("내용")
+                .isPublic(true)
+                .postDate(LocalDate.now())
+                .build();
         em.persist(post);
         em.flush();
 

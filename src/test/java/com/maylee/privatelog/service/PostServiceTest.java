@@ -21,7 +21,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -67,6 +67,7 @@ class PostServiceTest {
                 .title("1월 1일")
                 .content("새해 첫 일기 내용")
                 .isPublic(true)
+                .postDate(LocalDate.of(2026, 1, 1))
                 .build();
         ReflectionTestUtils.setField(post, "id", 1L);
         ReflectionTestUtils.setField(post, "createdAt", LocalDateTime.of(2026, 1, 1, 0, 0));
@@ -76,7 +77,7 @@ class PostServiceTest {
     @Test
     @DisplayName("게시글 등록 성공")
     void createPost_success() {
-        PostCreateRequest request = new PostCreateRequest("1월 1일", "내용", true, 1L, List.of());
+        PostCreateRequest request = new PostCreateRequest("1월 1일", "내용", true, 1L, List.of(), LocalDate.of(2004, 1, 1));
         given(usersRepository.findById(1L)).willReturn(Optional.of(user));
         given(categoriesRepository.findById(1L)).willReturn(Optional.of(category));
         given(postsRepository.save(any())).willReturn(post);
@@ -90,7 +91,7 @@ class PostServiceTest {
     @Test
     @DisplayName("게시글 등록 - 존재하지 않는 사용자")
     void createPost_userNotFound() {
-        PostCreateRequest request = new PostCreateRequest("1월 1일", "내용", true, null, List.of());
+        PostCreateRequest request = new PostCreateRequest("1월 1일", "내용", true, null, List.of(),LocalDate.of(2004,1,1));
         given(usersRepository.findById(99L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> postService.createPost(99L, request))
@@ -101,7 +102,8 @@ class PostServiceTest {
     @Test
     @DisplayName("게시글 등록 - 존재하지 않는 카테고리")
     void createPost_categoryNotFound() {
-        PostCreateRequest request = new PostCreateRequest("1월 1일", "내용", true, 99L, List.of());
+        
+        PostCreateRequest request = new PostCreateRequest("1월 1일", "내용", true, 99L, List.of(), LocalDate.of(2004,01,01));
         given(usersRepository.findById(1L)).willReturn(Optional.of(user));
         given(categoriesRepository.findById(99L)).willReturn(Optional.empty());
 
@@ -116,7 +118,7 @@ class PostServiceTest {
         given(postsRepository.findWithDetailsById(1L)).willReturn(Optional.of(post));
         given(commentService.getComments(1L)).willReturn(List.of());
 
-        PostDetailResponse response = postService.getPost(1L);
+        PostDetailResponse response = postService.getPost(1L, true);
 
         assertThat(response.id()).isEqualTo(1L);
         assertThat(response.title()).isEqualTo("1월 1일");
@@ -127,7 +129,7 @@ class PostServiceTest {
     void getPost_notFound() {
         given(postsRepository.findWithDetailsById(99L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.getPost(99L))
+        assertThatThrownBy(() -> postService.getPost(99L, true))
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessageContaining("게시글");
     }
@@ -135,7 +137,7 @@ class PostServiceTest {
     @Test
     @DisplayName("게시글 수정 성공")
     void updatePost_success() {
-        PostUpdateRequest request = new PostUpdateRequest("수정된 제목", null, null, null, null);
+        PostUpdateRequest request = new PostUpdateRequest("수정된 제목", null, null, null, null, null);
         given(postsRepository.findById(1L)).willReturn(Optional.of(post));
         given(commentService.getComments(1L)).willReturn(List.of());
 
@@ -147,7 +149,7 @@ class PostServiceTest {
     @Test
     @DisplayName("게시글 수정 - 작성자가 아닌 사용자는 예외")
     void updatePost_unauthorizedUser() {
-        PostUpdateRequest request = new PostUpdateRequest("수정된 제목", null, null, null, null);
+        PostUpdateRequest request = new PostUpdateRequest("수정된 제목", null, null, null, null, null);
         given(postsRepository.findById(1L)).willReturn(Optional.of(post));
 
         assertThatThrownBy(() -> postService.updatePost(1L, 99L, request))
@@ -178,7 +180,7 @@ class PostServiceTest {
     void getArchive_withoutFilter() {
         given(postsRepository.findAll(any(Sort.class))).willReturn(List.of(post));
 
-        var result = postService.getArchive(null);
+        var result = postService.getArchive(null, true);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).year()).isEqualTo(2026);
@@ -192,7 +194,7 @@ class PostServiceTest {
         given(postsRepository.findByCategoryId(eq(1L), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(post)));
 
-        var result = postService.getArchive(1L);
+        var result = postService.getArchive(1L, true);
 
         assertThat(result).hasSize(1);
         then(postsRepository).should().findByCategoryId(eq(1L), any(Pageable.class));
