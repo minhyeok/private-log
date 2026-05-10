@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,9 @@ public class Posts extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(nullable = false)
+    private LocalDate postDate;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean isPublic = true;
@@ -59,12 +63,13 @@ public class Posts extends BaseTimeEntity {
     private LocalDateTime deletedAt;
 
     public void update(String title, String content, Boolean isPublic,
-                       Categories category, List<Tags> tags) {
+                       Categories category, List<Tags> tags, LocalDate postDate) {
         if (title != null)    this.title    = title;
         if (content != null)  this.content  = content;
         if (isPublic != null) this.isPublic = isPublic;
         if (category != null) this.category = category;
         if (tags != null)     this.tags     = tags;
+        if (postDate != null) this.postDate = postDate;
     }
 
     public void delete() {

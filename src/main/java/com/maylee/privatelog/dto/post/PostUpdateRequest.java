@@ -2,6 +2,7 @@ package com.maylee.privatelog.dto.post;
 
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public record PostUpdateRequest(
@@ -9,5 +10,6 @@ public record PostUpdateRequest(
         String content,
         Boolean isPublic,
         Long categoryId,
-        List<Long> tagIds
+        List<Long> tagIds,
+        LocalDate postDate
 ) {}

@@ -6,6 +6,7 @@ import com.maylee.privatelog.dto.tag.TagResponse;
 import com.maylee.privatelog.dto.user.UserResponse;
 import com.maylee.privatelog.entity.Posts;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,6 +20,7 @@ public record PostDetailResponse(
         UserResponse author,
         List<TagResponse> tags,
         List<CommentResponse> comments,
+        LocalDate postDate,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -33,6 +35,7 @@ public record PostDetailResponse(
                 UserResponse.from(post.getUser()),
                 post.getTags().stream().map(TagResponse::from).toList(),
                 comments,
+                post.getPostDate(),
                 post.getCreatedAt(),
                 post.getUpdatedAt()
         );

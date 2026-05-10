@@ -3,7 +3,7 @@ package com.maylee.privatelog.dto.post;
 import com.maylee.privatelog.dto.tag.TagResponse;
 import com.maylee.privatelog.entity.Posts;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 public record PostSummaryResponse(
@@ -14,7 +14,7 @@ public record PostSummaryResponse(
         String categoryName,
         String authorNickname,
         List<TagResponse> tags,
-        LocalDateTime createdAt
+        LocalDate postDate
 ) {
     public static PostSummaryResponse from(Posts post) {
         return new PostSummaryResponse(
@@ -25,7 +25,7 @@ public record PostSummaryResponse(
                 post.getCategory() != null ? post.getCategory().getName() : null,
                 post.getUser().getNickname(),
                 post.getTags().stream().map(TagResponse::from).toList(),
-                post.getCreatedAt()
+                post.getPostDate()
         );
     }
 }

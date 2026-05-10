@@ -56,7 +56,7 @@ public class PostController {
     @GetMapping
     public ResponseEntity<Page<PostSummaryResponse>> getPosts(
             @RequestParam(required = false) Long categoryId,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @PageableDefault(size = 10, sort = "postDate", direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal AuthUser authUser
     ) {
         boolean authenticated = authUser != null;

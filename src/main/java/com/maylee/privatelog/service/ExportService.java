@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -19,11 +18,8 @@ public class ExportService {
     private final PostsRepository postsRepository;
 
     public byte[] exportMarkdown(Long categoryId, LocalDate startDate, LocalDate endDate) {
-        LocalDateTime from = startDate.atStartOfDay();
-        LocalDateTime to   = endDate.atTime(23, 59, 59);
-
         List<Posts> posts = postsRepository
-                .findByCategoryIdAndCreatedAtBetweenOrderByCreatedAtAsc(categoryId, from, to);
+                .findByCategoryIdAndPostDateBetweenOrderByPostDateAsc(categoryId, startDate, endDate);
 
         StringBuilder sb = new StringBuilder();
         for (Posts post : posts) {

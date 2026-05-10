@@ -63,6 +63,7 @@ public class PostService {
                 .content(request.content())
                 .isPublic(request.isPublic())
                 .tags(tags)
+                .postDate(request.postDate() != null ? request.postDate() : LocalDate.now())
                 .build();
 
         return PostDetailResponse.from(postsRepository.save(post), List.of());
@@ -88,7 +89,7 @@ public class PostService {
             tags = request.tagIds().isEmpty() ? List.of() : tagsRepository.findAllById(request.tagIds());
         }
 
-        post.update(request.title(), request.content(), request.isPublic(), category, tags);
+        post.update(request.title(), request.content(), request.isPublic(), category, tags, request.postDate());
 
         return PostDetailResponse.from(post, commentService.getComments(post.getId()));
     }
@@ -140,17 +141,17 @@ public class PostService {
     public List<DiaryYearGroup> getArchive(Long categoryId, boolean authenticated) {
         List<Posts> allPosts = categoryId != null
                 ? postsRepository.findByCategoryId(categoryId, Pageable.unpaged()).getContent()
-                : postsRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+                : postsRepository.findAll(Sort.by(Sort.Direction.DESC, "postDate"));
 
         List<Posts> posts = authenticated
                 ? allPosts
                 : allPosts.stream().filter(Posts::isPublic).toList();
 
         Map<Integer, Map<Integer, Map<LocalDate, List<Posts>>>> grouped = posts.stream().collect(Collectors.groupingBy(
-                        p -> p.getCreatedAt().getYear(),
+                        p -> p.getPostDate().getYear(),
                         Collectors.groupingBy(
-                                p -> p.getCreatedAt().getMonthValue(),
-                                Collectors.groupingBy(p -> p.getCreatedAt().toLocalDate())
+                                p -> p.getPostDate().getMonthValue(),
+                                Collectors.groupingBy(Posts::getPostDate)
                         )
                 ));
 
@@ -178,9 +179,9 @@ public class PostService {
     }
 
     public List<PostSummaryResponse> getPostsByMonth(YearMonth yearMonth, boolean authenticated) {
-        return postsRepository.findByCreatedAtBetween(
-                        yearMonth.atDay(1).atStartOfDay(),
-                        yearMonth.atEndOfMonth().atTime(23, 59, 59),
+        return postsRepository.findByPostDateBetween(
+                        yearMonth.atDay(1),
+                        yearMonth.atEndOfMonth(),
                         Pageable.unpaged()
                 )
                 .stream()
