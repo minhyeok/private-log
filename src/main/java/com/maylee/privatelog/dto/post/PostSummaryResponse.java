@@ -9,6 +9,7 @@ import java.util.List;
 public record PostSummaryResponse(
         Long id,
         String title,
+        String contentPreview,
         boolean isPublic,
         int viewCount,
         String categoryName,
@@ -20,6 +21,7 @@ public record PostSummaryResponse(
         return new PostSummaryResponse(
                 post.getId(),
                 post.getTitle(),
+                preview(post.getContent()),
                 post.isPublic(),
                 post.getViewCount(),
                 post.getCategory() != null ? post.getCategory().getName() : null,
@@ -27,5 +29,10 @@ public record PostSummaryResponse(
                 post.getTags().stream().map(TagResponse::from).toList(),
                 post.getPostDate()
         );
+    }
+
+    private static String preview(String content) {
+        if (content == null || content.length() <= 20) return content;
+        return content.substring(0, 20) + "...";
     }
 }

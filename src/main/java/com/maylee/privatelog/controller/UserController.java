@@ -4,11 +4,15 @@ import com.maylee.privatelog.dto.user.TokenResponse;
 import com.maylee.privatelog.dto.user.UserLoginRequest;
 import com.maylee.privatelog.dto.user.UserRegisterRequest;
 import com.maylee.privatelog.dto.user.UserResponse;
+import com.maylee.privatelog.security.AuthUser;
 import com.maylee.privatelog.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,6 +28,16 @@ public class UserController {
     @PostMapping("/auth/login")
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody UserLoginRequest request) {
         return ResponseEntity.ok(userService.login(request));
+    }
+
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<TokenResponse> refresh(@AuthenticationPrincipal AuthUser authUser) {
+        return ResponseEntity.ok(userService.refresh(authUser.id()));
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponse>> getUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping("/users/{id}")

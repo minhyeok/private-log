@@ -21,7 +21,9 @@ Authorization: Bearer <token>
 `PATCH /comments/**`, `DELETE /comments/**`
 
 ### 인증 필요 엔드포인트
+`POST /auth/refresh`,
 `POST /posts`, `PATCH /posts/**`, `DELETE /posts/**`,
+`POST /categories`, `DELETE /categories/**`,
 `GET /users/**`, `DELETE /users/**`
 
 ---
@@ -89,7 +91,31 @@ Authorization: Bearer <token>
 
 ---
 
+### POST /auth/refresh
+토큰 갱신. **인증 필요.** 현재 유효한(만료 전) 토큰으로 같은 사용자의 새 토큰을 재발급한다.
+
+이미 만료된 토큰으로는 호출할 수 없다 (이 경우 다시 `/auth/login` 필요).
+
+**Request Body** 없음
+
+**Response 200** — `/auth/register`와 동일 구조
+
+---
+
 ## Users
+
+### GET /users
+사용자 전체 조회. **인증 필요.**
+
+**Response 200**
+```json
+[
+  { "id": 1, "username": "minlee", "nickname": "이민혁" },
+  { "id": 2, "username": "guest", "nickname": "게스트" }
+]
+```
+
+---
 
 ### GET /users/{id}
 사용자 조회. **인증 필요.**
@@ -125,6 +151,42 @@ Authorization: Bearer <token>
   { "id": 3, "name": "기타" }
 ]
 ```
+
+---
+
+### POST /categories
+카테고리 등록. **인증 필요.**
+
+**Request Body**
+```json
+{ "name": "여행" }
+```
+- `name`: 필수, 최대 50자, 중복 불가
+
+**Response 200**
+```json
+{ "id": 4, "name": "여행" }
+```
+
+**에러**
+| HTTP 상태 | 발생 상황 |
+|---|---|
+| 400 | 이미 존재하는 카테고리 이름 |
+| 401 | 토큰 없음 또는 만료 |
+
+---
+
+### DELETE /categories/{id}
+카테고리 삭제. **인증 필요.** 해당 카테고리를 참조하는 게시글이 있으면 삭제 불가.
+
+**Response 204** (No Content)
+
+**에러**
+| HTTP 상태 | 발생 상황 |
+|---|---|
+| 400 | 게시글이 존재하는 카테고리 삭제 시도 |
+| 401 | 토큰 없음 또는 만료 |
+| 404 | 카테고리 없음 |
 
 ---
 

@@ -26,8 +26,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 엔드포인트
-                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
+                        // 인증 엔드포인트 (회원가입·로그인만 공개, /auth/refresh는 토큰 필요)
+                        .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                         // 게시글·카테고리 조회는 공개
                         .requestMatchers(HttpMethod.GET, "/posts/**", "/categories").permitAll()
                         // 댓글은 서비스 레이어에서 권한 처리 (익명 허용)

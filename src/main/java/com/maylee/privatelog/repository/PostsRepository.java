@@ -20,6 +20,9 @@ public interface PostsRepository extends JpaRepository<Posts, Long> {
     // 카테고리별 페이징 목록
     Page<Posts> findByCategoryId(Long categoryId, Pageable pageable);
 
+    // 카테고리 삭제 가능 여부 확인용 (해당 카테고리를 참조하는 게시글 존재 여부)
+    boolean existsByCategoryId(Long categoryId);
+
     // 공개 글만 전체 페이징
     Page<Posts> findByIsPublicTrue(Pageable pageable);
 
