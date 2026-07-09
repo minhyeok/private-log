@@ -157,6 +157,10 @@ function closeModal(id) {
   document.getElementById(id).classList.remove('open');
 }
 
+function authHeaders() {
+  return state.token ? { 'Authorization': `Bearer ${state.token}` } : {};
+}
+
 function onOverlayClick(e, id) {
   if (e.target === e.currentTarget) closeModal(id);
 }
@@ -167,14 +171,14 @@ async function init() {
   try {
     const [cats, allArchive] = await Promise.all([
       fetch(`${API}/categories`).then(r => r.json()),
-      fetch(`${API}/posts/archive`).then(r => r.json())
+      fetch(`${API}/posts/archive`, { headers: authHeaders() }).then(r => r.json())
     ]);
 
     state.categories    = cats;
     state.diaryCategory = cats.find(c => c.name === '일기');
 
     if (state.diaryCategory) {
-      state.archiveData = await fetch(`${API}/posts/archive?categoryId=${state.diaryCategory.id}`)
+      state.archiveData = await fetch(`${API}/posts/archive?categoryId=${state.diaryCategory.id}`, { headers: authHeaders() })
         .then(r => r.json());
     } else {
       state.archiveData = allArchive;
@@ -191,10 +195,10 @@ async function init() {
 async function refreshArchive() {
   try {
     if (state.diaryCategory) {
-      state.archiveData = await fetch(`${API}/posts/archive?categoryId=${state.diaryCategory.id}`)
+      state.archiveData = await fetch(`${API}/posts/archive?categoryId=${state.diaryCategory.id}`, { headers: authHeaders() })
         .then(r => r.json());
     } else {
-      state.archiveData = await fetch(`${API}/posts/archive`).then(r => r.json());
+      state.archiveData = await fetch(`${API}/posts/archive`, { headers: authHeaders() }).then(r => r.json());
     }
     state.years = state.archiveData.map(yg => yg.year);
     populateSidebar();
@@ -241,7 +245,7 @@ async function showHome() {
   main.innerHTML = '<div class="loading">불러오는 중...</div>';
 
   try {
-    const post = await fetch(`${API}/posts/${firstEntry.postId}`).then(r => r.json());
+    const post = await fetch(`${API}/posts/${firstEntry.postId}`, { headers: authHeaders() }).then(r => r.json());
     renderHomePost(post);
   } catch {
     main.innerHTML = '<div class="loading">불러오기 실패</div>';
@@ -294,7 +298,7 @@ async function showCategoryPosts(categoryId, categoryName) {
   main.innerHTML  = '<div class="loading">불러오는 중...</div>';
 
   try {
-    const data = await fetch(`${API}/posts?categoryId=${categoryId}&size=50&sort=postDate,desc`)
+    const data = await fetch(`${API}/posts?categoryId=${categoryId}&size=50&sort=postDate,desc`, { headers: authHeaders() })
       .then(r => r.json());
     renderCategoryList(data.content || [], categoryName);
   } catch {
@@ -327,7 +331,7 @@ async function showPost(id, backView) {
   main.innerHTML = '<div class="loading">불러오는 중...</div>';
 
   try {
-    const post = await fetch(`${API}/posts/${id}`).then(r => r.json());
+    const post = await fetch(`${API}/posts/${id}`, { headers: authHeaders() }).then(r => r.json());
     renderPostDetail(post);
     state.view = 'post';
   } catch {

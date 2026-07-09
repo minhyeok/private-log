@@ -16,7 +16,7 @@ Authorization: Bearer <token>
 - 유효기간: 24시간
 
 ### 공개 엔드포인트 (토큰 불필요)
-`GET /posts/**`, `POST /auth/**`, `GET /categories`,
+`GET /posts/**` (단, 비공개 게시글은 아래 규칙에 따라 제한됨), `POST /auth/register`, `POST /auth/login`, `GET /categories`,
 `GET /posts/*/comments`, `POST /posts/*/comments`,
 `PATCH /comments/**`, `DELETE /comments/**`
 
@@ -24,7 +24,28 @@ Authorization: Bearer <token>
 `POST /auth/refresh`,
 `POST /posts`, `PATCH /posts/**`, `DELETE /posts/**`,
 `POST /categories`, `DELETE /categories/**`,
-`GET /users/**`, `DELETE /users/**`
+`GET /users`, `GET /users/**`, `DELETE /users/**`
+
+---
+
+## 비공개(isPublic=false) 게시글 노출 규칙
+
+`GET /posts/**` 계열 엔드포인트는 요청에 유효한 `Authorization: Bearer <token>` 헤더가 있는지에 따라
+비공개(`isPublic: false`) 게시글의 노출 여부가 갈린다.
+
+| 구분 | 인증됨 (유효 토큰) | 미인증 |
+|---|---|---|
+| `GET /posts` | 전체(공개+비공개) 반환 | 공개 글만 반환 (비공개 글은 조용히 제외, 에러 없음) |
+| `GET /posts/month/{yearMonth}` | 전체 반환 | 공개 글만 반환 (제외, 에러 없음) |
+| `GET /posts/archive` | 전체 반환 | 공개 글만 반환 (제외, 에러 없음) |
+| `GET /posts/{id}` | 항상 반환 | 비공개 글이면 **404** (`게시글을 찾을 수 없습니다.`) |
+| `GET /posts/date/{date}` | 항상 반환 | 비공개 글이면 **404** (`해당 날짜의 게시글을 찾을 수 없습니다.`) |
+
+단건 조회(`/posts/{id}`, `/posts/date/{date}`)는 403이 아니라 **404**를 반환한다.
+글의 존재 여부 자체를 미인증 사용자에게 노출하지 않기 위함이다 (비공개 글이 "있는데 권한이 없다"는 정보도 주지 않음).
+
+프론트엔드에서 로그인 상태로 비공개 글이 계속 안 보인다면, 위 GET 요청들에 `Authorization` 헤더를
+빠짐없이 실어 보내고 있는지 먼저 확인할 것.
 
 ---
 
@@ -194,6 +215,7 @@ Authorization: Bearer <token>
 
 ### GET /posts
 게시글 페이징 목록. 카테고리 필터 선택 가능.
+미인증 요청은 비공개(`isPublic: false`) 게시글이 목록에서 제외된다 (에러 아님 — 위 "비공개 게시글 노출 규칙" 참고).
 
 **Query Parameters**
 | 파라미터 | 필수 | 설명 |
@@ -247,6 +269,11 @@ Authorization: Bearer <token>
 }
 ```
 
+**에러**
+| HTTP 상태 | 발생 상황 |
+|---|---|
+| 404 | 게시글 없음, 또는 비공개 게시글을 미인증 상태로 조회 (위 "비공개 게시글 노출 규칙" 참고) |
+
 ---
 
 ### GET /posts/date/{date}
@@ -256,10 +283,16 @@ Authorization: Bearer <token>
 
 **Response 200** — `/posts/{id}`와 동일 구조
 
+**에러**
+| HTTP 상태 | 발생 상황 |
+|---|---|
+| 404 | 해당 날짜의 게시글 없음, 또는 비공개 게시글을 미인증 상태로 조회 |
+
 ---
 
 ### GET /posts/month/{yearMonth}
 특정 월의 게시글 목록.
+미인증 요청은 비공개 게시글이 목록에서 제외된다 (에러 아님).
 
 **Path** `yearMonth` 형식: `yyyy-MM` (예: `2026-01`)
 
@@ -280,6 +313,7 @@ Authorization: Bearer <token>
 
 ### GET /posts/archive
 연/월/일 계층 아카이브. 카테고리 필터 선택 가능.
+미인증 요청은 비공개 게시글이 아카이브에서 제외된다 (에러 아님).
 
 **Query Parameters**
 | 파라미터 | 필수 | 설명 |

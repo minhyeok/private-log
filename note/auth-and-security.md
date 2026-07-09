@@ -12,6 +12,7 @@ Spring Security 7 + JJWT 0.12.x 기반의 Stateless JWT 인증을 사용한다.
 ### 발급 시점
 - `POST /auth/register` — 회원가입 완료 시
 - `POST /auth/login` — 로그인 성공 시
+- `POST /auth/refresh` — 유효한(만료 전) 토큰으로 재발급 시 (아래 "토큰 갱신" 참고)
 
 ### 토큰 내 Claims
 
@@ -53,14 +54,36 @@ Spring Security 7 + JJWT 0.12.x 기반의 Stateless JWT 인증을 사용한다.
 
 ---
 
+## 토큰 갱신 (`POST /auth/refresh`)
+
+DB에 별도의 Refresh Token을 저장하는 방식이 아니라, **현재 갖고 있는 Access Token 자체가
+아직 유효(만료 전)할 때 같은 사용자 정보로 새 토큰을 재발급**하는 단순한 방식이다 (일종의 sliding session).
+
+```
+클라이언트                          서버
+   |  POST /auth/refresh              |
+   |  Authorization: Bearer <token>   |
+   |                          ──────► |  JwtAuthenticationFilter: 기존 토큰 검증 → AuthUser 설정
+   |                                  |  UserController: @AuthenticationPrincipal AuthUser
+   |                                  |  UserService.refresh(): JwtProvider.generateToken() 재발급
+   |  ◄── { token, user } (새 토큰)   |
+```
+
+**제약:** 이미 만료된 토큰으로는 호출할 수 없다 (`JwtAuthenticationFilter`가 검증에 실패해 `AuthUser`가 주입되지 않고 401).
+이 경우 클라이언트는 `/auth/login`으로 재로그인해야 한다.
+서버가 발급 이력을 저장하지 않으므로 아래 "토큰 무효화 고도화 방안"에서 다루는 회전(rotation)·폐기(revoke)는 여전히 미지원이다.
+
+---
+
 ## SecurityConfig — 엔드포인트 접근 제어
 
 ### 공개 (인증 없이 접근 가능)
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
-| POST | `/auth/**` | 회원가입, 로그인 |
-| GET | `/posts/**` | 게시글 전체 조회 |
+| POST | `/auth/register`, `/auth/login` | 회원가입, 로그인 |
+| GET | `/posts/**` | 게시글 조회 (단, 비공개 글은 미인증 시 제외/404 — `note/api-spec.md` "비공개 게시글 노출 규칙" 참고) |
+| GET | `/categories` | 카테고리 전체 조회 |
 | ALL | `/posts/*/comments/**` | 댓글 조회/작성 (익명 허용) |
 | ALL | `/comments/**` | 댓글 수정/삭제 (서비스에서 권한 검증) |
 | GET | `/`, `/index.html`, `/css/**`, `/js/**` | 정적 리소스 |
@@ -69,11 +92,19 @@ Spring Security 7 + JJWT 0.12.x 기반의 Stateless JWT 인증을 사용한다.
 
 | 메서드 | 경로 | 설명 |
 |---|---|---|
+| POST | `/auth/refresh` | 토큰 갱신 |
 | POST | `/posts` | 게시글 작성 |
 | PATCH | `/posts/**` | 게시글 수정 |
 | DELETE | `/posts/**` | 게시글 삭제 |
+| POST | `/categories` | 카테고리 등록 |
+| DELETE | `/categories/{id}` | 카테고리 삭제 (참조 중인 게시글 있으면 400) |
+| GET | `/users` | 사용자 전체 조회 |
 | GET | `/users/{id}` | 사용자 조회 |
 | DELETE | `/users/{id}` | 사용자 삭제 |
+
+`/auth/**`는 더 이상 일괄 `permitAll`이 아니다 — `/auth/register`, `/auth/login`만 명시적으로 공개하고
+`/auth/refresh`는 `anyRequest().authenticated()`에 걸리도록 `SecurityConfig`에서 분리했다.
+새 `/auth/*` 엔드포인트를 추가할 때 이 패턴(전체 와일드카드 대신 개별 경로 명시)을 따를 것.
 
 ---
 

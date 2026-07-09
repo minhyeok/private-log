@@ -95,8 +95,10 @@ com.maylee.privatelog
 - 토큰은 `Authorization: Bearer <token>` 헤더로 전달한다.
 - `JwtAuthenticationFilter`가 매 요청마다 토큰을 파싱해 `SecurityContextHolder`에 `AuthUser`를 설정한다.
 - `AuthUser(Long id, String username, UserRole role)`가 컨트롤러의 Principal이 된다.
-- 공개 엔드포인트: `GET /posts/**`, `POST /auth/**`, `/posts/*/comments/**`, `/comments/**`, 정적 리소스
-- 인증 필요 엔드포인트: `POST /posts`, `PATCH /posts/**`, `DELETE /posts/**`, `GET/DELETE /users/**`
+- 공개 엔드포인트: `GET /posts/**`(비공개 글은 미인증 시 제외/404), `POST /auth/register`, `POST /auth/login`, `GET /categories`, `/posts/*/comments/**`, `/comments/**`, 정적 리소스
+- 인증 필요 엔드포인트: `POST /auth/refresh`, `POST /posts`, `PATCH /posts/**`, `DELETE /posts/**`, `POST /categories`, `DELETE /categories/**`, `GET /users`, `GET/DELETE /users/**`
+- `/auth/**`를 일괄 `permitAll`하지 않는다. `/auth/refresh`처럼 인증이 필요한 하위 경로가 늘어날 수 있으므로 `/auth/register`, `/auth/login`처럼 공개할 경로를 개별 명시한다.
+- `POST /auth/refresh`는 별도의 Refresh Token 저장 없이, 아직 유효한(만료 전) Access Token을 그대로 재검증해 새 토큰을 발급하는 방식이다 (sliding session). 이미 만료된 토큰으로는 갱신 불가 — 재로그인 필요.
 - 서버 측 로그아웃 처리는 없다. 클라이언트가 토큰을 삭제하는 것으로 로그아웃을 처리한다.
 
 ---
@@ -116,16 +118,21 @@ com.maylee.privatelog
 - 파일은 `src/main/resources/static/`에 위치시켜 Spring Boot가 직접 서빙한다.
 - 백엔드와 동일한 서버에서 호스팅하므로 CORS 설정은 불필요하다.
 - 백엔드 API를 `fetch()`로 호출해 데이터를 렌더링하는 방식으로 구현한다.
+- 로그인 상태에서 비공개(`isPublic=false`) 게시글까지 조회해야 하는 `GET` 요청(목록, 상세, 아카이브 등)에는
+  토큰이 있을 경우 반드시 `Authorization: Bearer <token>` 헤더를 실어 보낸다. 빠뜨리면 로그인해도
+  항상 공개 글만 보이는 문제가 생긴다. (`app.js`의 `authHeaders()` 헬퍼 참고)
 - 로그아웃은 클라이언트 측에서 저장된 토큰을 삭제하는 방식으로 처리한다.
 
 ---
 
 ## 미구현 / 추후 예정
 
-- `CategoryService` — 카테고리 관리 API
 - 태그 필터링 기반 게시글 목록 조회
-- Refresh Token 기반 토큰 갱신 (필요 시)
+- 로그인 사용자 목록(`GET /users`)에 페이징 없음 — 사용자 수가 적은 개인 서비스 특성상 현재는 불필요
+- 토큰 강제 무효화(로그아웃 시 블랙리스트 처리, DB 기반 Refresh Token 회전) — `note/auth-and-security.md` "토큰 무효화 고도화 방안" 참고
 
 ## 코드 수정 지침
 
 AI는 작업 수행시 이 문서를 읽고 작업을 수행하며, 종료 후 다시 이 문서를 읽고 필요에 따라 업데이트를 해주기 바랍니다.
+- api 설명 : note/api-spec.md
+- 권한 및 보안 관련 설명 : note/auth-and-security.md
